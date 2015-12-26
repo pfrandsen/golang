@@ -8,7 +8,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -34,6 +36,14 @@ func localIPs() string {
 	return ips
 }
 
+func uname() string {
+	out, err := exec.Command("uname", "-a").Output()
+	if err != nil {
+		return "Unknown"
+	}
+	return strings.ToLower(strings.TrimSpace(string(out)))
+}
+
 func header(w http.ResponseWriter) {
 	io.WriteString(w, "<html>\n")
 	io.WriteString(w, "<head>\n")
@@ -57,6 +67,7 @@ func info(w http.ResponseWriter, r *http.Request) {
 	header(w)
 	io.WriteString(w, "<dl>")
 	io.WriteString(w, "<dt>Hostname</dt><dd>"+host+"</dd>")
+	io.WriteString(w, "<dt>OS</dt><dd>"+uname()+"</dd>")
 	io.WriteString(w, "<dt>IP</dt><dd>"+localIPs()+"</dd>")
 	io.WriteString(w, "<dt>Port</dt><dd>"+strconv.Itoa(listenPort)+"</dd>")
 	io.WriteString(w, "<dt>Process id</dt><dd>"+strconv.Itoa(os.Getpid())+"</dd>")
