@@ -2,6 +2,6 @@
 
 ##static##
 
-Web server serving static files from content directory. See local README.md
+Web server serving static files from content directory. See local [README.md](static/README.md)
 
 
