@@ -12,3 +12,6 @@ Example run command:
 
 Point browser to [http://localhost:8080/](http://localhost:8080/) or [http://localhost:8080/info](http://localhost:8080/info). Use hostname or ip address of Raspberry Pi device when running server on the device. 
 
+Sample output from running the server on a Raspberry Pi named node-4 (running Snappy Ubuntu Core)
+
+[Screenshot from Raspberry Pi](img/sever-on-pi.png)
