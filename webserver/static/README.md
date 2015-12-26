@@ -8,4 +8,4 @@ Default port is 8000. Default content location is current working directory + "/
 
 Example run commands:
 * ./static (serves files from 'content' subdirectory on port 8000)
-* ./static -port=8080 -path=`pwd`/other (serves files from 'other' subdirectory on port 8080)
+* ./static -port=8080 -path=&#96;pwd&#96;/other (serves files from 'other' subdirectory on port 8080)
