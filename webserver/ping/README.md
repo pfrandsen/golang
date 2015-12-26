@@ -1,6 +1,8 @@
 #Sample web server#
 This web server is used as part of a Raspberry Pi project. In that project it is used to check connectivity on specific ports and to get basic info about the device/os. The server only responds to two context paths "/" and "/info".
 
+This application uses Linux commands and will therefor only work as intende on Linux systems.
+
 ##Build and run##
 1. ./build.sh (or go build static.go) - use ./arm-build.sh if building for ARM processor (e.g., Raspberry Pi)
 2. ./server -port=&lt;port&gt; 
