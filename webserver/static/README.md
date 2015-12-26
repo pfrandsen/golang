@@ -10,4 +10,4 @@ Example run commands:
 * **./static** (serves files from 'content' subdirectory on port 8000)
 * **./static -port=8080 -path=&#96;pwd&#96;/other** (serves files from 'other' subdirectory on port 8080)
 
-Point browser to http://localhost:8000/ or http://localhost:8080/ to list files in the given content directory.
+Point browser to [http://localhost:8000/](http://localhost:8000/) or [http://localhost:8080/](http://localhost:8080/) to list files in the given content directory.
