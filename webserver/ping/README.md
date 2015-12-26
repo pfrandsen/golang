@@ -14,4 +14,4 @@ Point browser to [http://localhost:8080/](http://localhost:8080/) or [http://loc
 
 Sample output from running the server on a Raspberry Pi named node-4 (running Snappy Ubuntu Core)
 
-[Screenshot from Raspberry Pi](img/sever-on-pi.png)
+![Screenshot from Raspberry Pi](img/sever-on-pi.png "Web server running on Raspberry Pi")
