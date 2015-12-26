@@ -43,6 +43,14 @@ func uname() string {
 	return string(out)
 }
 
+func lsb(field string) string {
+	out, err := exec.Command("lsb_release", "-s", "-"+field).Output()
+	if err != nil {
+		return "Unknown"
+	}
+	return string(out)
+}
+
 func header(w http.ResponseWriter) {
 	io.WriteString(w, "<html>\n")
 	io.WriteString(w, "<head>\n")
@@ -66,7 +74,14 @@ func info(w http.ResponseWriter, r *http.Request) {
 	header(w)
 	io.WriteString(w, "<dl>")
 	io.WriteString(w, "<dt>Hostname</dt><dd>"+host+"</dd>")
-	io.WriteString(w, "<dt>OS (uname -a)</dt><dd>"+uname()+"</dd>")
+	io.WriteString(w, "<dt>Operating System</dt>")
+	io.WriteString(w, "<dd><dl>")
+	io.WriteString(w, "<dt>uname -a</dt><dd>"+uname()+"</dd>")
+	io.WriteString(w, "<dt>lsb id</dt><dd>"+lsb("i")+"</dd>")
+	io.WriteString(w, "<dt>lsb release</dt><dd>"+lsb("r")+"</dd>")
+	io.WriteString(w, "<dt>lsb description</dt><dd>"+lsb("d")+"</dd>")
+	io.WriteString(w, "<dt>lsb codename</dt><dd>"+lsb("c")+"</dd>")
+	io.WriteString(w, "</dl></dd>")
 	io.WriteString(w, "<dt>IP</dt><dd>"+localIPs()+"</dd>")
 	io.WriteString(w, "<dt>Port</dt><dd>"+strconv.Itoa(listenPort)+"</dd>")
 	io.WriteString(w, "<dt>Process id</dt><dd>"+strconv.Itoa(os.Getpid())+"</dd>")
