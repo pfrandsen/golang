@@ -8,7 +8,7 @@ This web server is used as part of a Raspberry Pi project. In that project it is
 Default port is 8000.
 
 Example run command:
-* **./server -port=8080
+* **./server -port=8080**
 
 Point browser to [http://localhost:8080/](http://localhost:8080/) or [http://localhost:8080/info](http://localhost:8080/info). Use hostname or ip address of Raspberry Pi device when running server on the device. 
 
