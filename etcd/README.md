@@ -10,5 +10,5 @@ Script for running etcd service on single node with network access
 
 If run-single.sh is run on a host named **node-1** key-value pairs can be written and read from other hosts on the network as shown in the examples below:
 
-curl -L http://node-1:2379/v2/keys/mykey -XPUT -d value="its alive"
-curl -L http://node-1:2379/v2/keys/mykey
+1. Write: curl -L http://node-1:2379/v2/keys/mykey -XPUT -d value="its alive"
+2. Read: curl -L http://node-1:2379/v2/keys/mykey
