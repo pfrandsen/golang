@@ -3,7 +3,7 @@
 This article describes how build and run a etcd cluster on Raspberry Pi. Snappy Ubuntu Core is used as the base OS on the Pi devices,
 and it is shown how you can run a etcd cluster directly on the base OS and how to run it using Docker containers.
 
-Side note: The article markdown source is generated with the following command:
+Side note: The article markdown source is generated with the following command (to embed source code):
 ```sh
 go run build.go < etcd-cluster.src > etcd-cluster.md
 ```
@@ -14,12 +14,12 @@ The hardware used to build and configure the cluster consist of:
 
 1. 4 x Raspberry Pi 2 Model B (32 bit Arm7, quad core, 900MHz, 1GB Ram)
 2. 4 x 32GB microSD memory cards
-3. 5 port switch
+3. 1 x 5 port switch
 4. Network cables, Ubuntu Linux laptops, USB power adapters, microSD to USB adapter, ...
 
 The main parts for the cluster is shown in the image below.
 
-![Main hardware for cluster](img/cluster.jpg "Raspberry Pi's and switch")
+![Main hardware for cluster](img/cluster.jpg "Raspberry Pi's and switch" | width=400)
 
 ### Flash microSD cards with Snappy Ubuntu Core
 
