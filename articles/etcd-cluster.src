@@ -1,0 +1,12 @@
+## title
+
+The markdown source is generated with the following command:
+```sh
+go run build.go < etcd-cluster.src > etcd-cluster.md
+```
+
+Sample include
+```sh
+<!-- include(../etcd/Dockerfile) -->
+```
+
