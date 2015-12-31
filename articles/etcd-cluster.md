@@ -1,27 +1,27 @@
-## title
+## Building a 4 node etcd cluster on Raspberry Pi using Snappy Ubuntu Core and Docker
 
-The markdown source is generated with the following command:
+This article describes how build and run a etcd cluster on Raspberry Pi. Snappy Ubuntu Core is used as the base OS on the Pi devices,
+and it is shown how you can run a etcd cluster directly on the base OS and how to run it using Docker containers.
+
+Side note: The article markdown source is generated with the following command:
 ```sh
 go run build.go < etcd-cluster.src > etcd-cluster.md
 ```
 
-Sample include
-```sh
-FROM resin/rpi-raspbian:wheezy-20151223
-MAINTAINER Peter Frandsen <pfrandsen@gmail.com>
-LABEL decription="Raspberry Pi etcd (32 bit ARM)"
+### Hardware
 
-COPY etcd /etcd/etcd
-COPY etcdctl /etcd/etcdctl
+The hardware used to build and configure the cluster consist of:
 
-RUN chmod +x /etcd/etcd
-RUN chmod +x /etcd/etcdctl
+1. 4 x Raspberry Pi 2 Model B (32 bit Arm7, quad core, 900MHz, 1GB Ram)
+2. 4 x 32GB microSD memory cards
+3. 5 port switch
+4. Network cables, Ubuntu Linux laptops, USB power adapters, microSD to USB adapter, ...
 
-ENV PATH "$PATH:/etcd"
-# RUN echo $PATH
+The main parts for the cluster is shown in the image below.
 
-EXPOSE 4001 7001 2379 2380
-```
+![Main hardware for cluster](img/cluster.jpg "Raspberry Pi's and switch")
+
+### Flash microSD cards with Snappy Ubuntu Core
 
 First you need to download a Snappy image and write it to a sd memory card. On your workstation/laptop do the following:
 ```sh
@@ -66,4 +66,22 @@ Device     Boot   Start     End Sectors  Size Id Type
 ```
 
 In the file manager these will be shown as writeable, system-a, system-b, and system-boot.
+
+```dockerfile
+FROM resin/rpi-raspbian:wheezy-20151223
+MAINTAINER Peter Frandsen <pfrandsen@gmail.com>
+LABEL decription="Raspberry Pi etcd (32 bit ARM)"
+
+COPY etcd /etcd/etcd
+COPY etcdctl /etcd/etcdctl
+
+RUN chmod +x /etcd/etcd
+RUN chmod +x /etcd/etcdctl
+
+ENV PATH "$PATH:/etcd"
+# RUN echo $PATH
+
+EXPOSE 4001 7001 2379 2380
+```
+
 
