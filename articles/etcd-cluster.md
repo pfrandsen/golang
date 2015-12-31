@@ -19,7 +19,7 @@ The hardware used to build and configure the cluster consist of:
 
 The main parts for the cluster is shown in the image below.
 
-![Main hardware for cluster](img/cluster.jpg "Raspberry Pi's and switch" | width=400)
+![Main hardware for cluster](img/cluster-small.jpg "Raspberry Pi's and switch")
 
 ### Flash microSD cards with Snappy Ubuntu Core
 
