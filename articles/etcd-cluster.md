@@ -357,11 +357,160 @@ done
 
 ### etcd
 etcd, which is part of [CoreOS](https://en.wikipedia.org/wiki/CoreOS "CoreOS Wikipedia article") is a daemon that runs across the nodes in a cluster to provides a distributed key-value store. It is often used for
-reliably distributing configuration information (e.g., [Kubernetes](https://en.wikipedia.org/wiki/Kubernetes "Kubernetes Wikipedia article") depends on etcd). It will be used here as the "sample" service to test out the cluster.
+reliably distributing configuration information (e.g., [Kubernetes](https://en.wikipedia.org/wiki/Kubernetes "Kubernetes Wikipedia article") depends on etcd). It will be used here as the "sample" service to test out the Raspberry Pi cluster.
+
+#### Building and testing etcd
+
+You can clone the etcd git repository from github (git clone https://github.com/coreos/etcd.git) and build the latest source, but these are not guaranteed to be stable. Instead we will use the latest release from https://github.com/coreos/etcd/releases/ - at the time this guide was written it is version 2.2.2.
+
+A build script is provided on github (https://github.com/pfrandsen/golang/blob/master/etcd/build.sh). 
+```sh
+#!/bin/bash
+
+# Requires Go > 1.5 for cross compilation
+
+ARM=false
+SRC_DIR=src
+ETCD_VERSION=2.2.2 # See https://github.com/coreos/etcd/releases/ for the latest release
+USAGE_SHORT="[-v=$ETCD_VERSION] [-d=$SRC_DIR] [-a]"
+USAGE_LONG="[--version=$ETCD_VERSION] [--directory=$SRC_DIR] [--arm]"
+
+# handle script arguments
+for i in "$@"
+do
+case $i in
+    -h|--help)
+    echo "usage: $0 $USAGE_SHORT"
+    echo "usage: $0 $USAGE_LONG"
+    echo -e "\nall arguments are optional"
+    echo "default values for source version and target directory are shown above"
+    echo "if arm flag is present the source will be cross compiled for ARM architecture"
+    exit 0
+    ;;
+    -v=*|--version=*)
+    ETCD_VERSION="${i#*=}"
+    ;;
+    -d=*|--directory=*)
+    SRC_DIR="${i#*=}"
+    ;;
+    -a|--arm)
+    ARM=true
+    ;;
+    *)
+            # unknown option
+    ;;
+esac
+done
+
+if [ -d "$SRC_DIR" ]; then
+    echo "Error: Source directory '$SRC_DIR' already exists"  >&2
+    exit 1
+fi
+
+if [ "$ARM" = "true" ]
+then
+  export GOOS=linux
+  export GOARCH=arm
+  export GOARM=7
+  echo "cross compiling etcd $ETCD_VERSION for $GOOS $GOARCH $GOARM"
+else
+  echo "compiling etcd $ETCD_VERSION for default OS and architecture"
+fi
+
+mkdir $SRC_DIR
+echo "fetching etcd source and unpacking in $SRC_DIR directory"
+curl -sSL -k https://github.com/coreos/etcd/archive/v${ETCD_VERSION}.tar.gz | tar --touch --directory $SRC_DIR -xz
+pushd $SRC_DIR/etcd-${ETCD_VERSION} > /dev/null 2>&1
+
+# etcd build script likes to have the source in a git repo in order to generate sha hash (git rev-parse --short HEAD)
+echo "converting "`pwd`" to git repo"
+git init > /dev/null 2>&1
+git add . > /dev/null 2>&1
+git commit -m "etcd ${ETCD_VERSION} source" > /dev/null 2>&1
+echo "building etcd and etcdclt ..."
+./build
+echo "binaries can be found in "`pwd`"/bin"
+popd > /dev/null 2>&1
+
+```
+
+Like the [web server](#optional-step---testing-connectivity-and-playing-with-go-and-cross-compilation) above, the build can be done on
+your laptop using the cross compilation capabilities of the Go compiler.
+
+To build and test this on a Raspberry Pi do the following.
+
+Build ARM binaries:
+```sh
+git clone https://github.com/pfrandsen/golang.git
+cd golang/etcd
+./build.sh --arm --version=2.2.2
+```
+
+Copy ARM binaries to node:
+```sh
+scp src/etcd-2.2.2/bin/etcd ubuntu@node-1:
+scp src/etcd-2.2.2/bin/etcdctl ubuntu@node-1:
+```
+
+Run etcd service:
+```sh
+ssh ubuntu@node-1
+./etcd
+```
+
+To test it open another terminal and run:
+```sh
+ssh ubuntu@node-1
+./etcdctl set somekey "hello etcd"
+./etcdctl get somekey
+```
+
+The output should look like:
+![Raspberry Pi term](img/test-on-pi.png "Testing etcdctl on Raspberry Pi")
+
+##### Accessing etcd over the network
+When the etcd server is started as shown in the previous section it is not accessible from remote hosts. To enable network access the etcd server needs to be configured (via **listen-client-urls** parameter) to listen on the meta address 0.0.0.0. When this address is used etcd will listens to the given port on all interfaces. The parameter **advertise-client-urls** must also be set when listen-client-urls are set.
+
+
+The golang github repository used previously contains a bash script that can be used to configure network access. It is placed in the same folder (golang/etcd) as the script to build etcd. It is also included here for convinience.
+```sh
+#!/bin/bash
+
+# use hostname in advertise client urls
+NODE_NAME="etcd-"`hostname`
+LCU="http://0.0.0.0:2379,http://0.0.0.0:4001"
+ACU="http://"`hostname`":2379,http://"`hostname`":4001"
+./etcd -name $NODE_NAME -listen-client-urls $LCU -advertise-client-urls $ACU
+
+```
+
+
+Copy script to node:
+```sh
+[git clone https://github.com/pfrandsen/golang.git]
+[cd golang/etcd]
+scp run-single.sh ubuntu@node-1:
+```
+
+Run etcd service:
+```sh
+ssh ubuntu@node-1
+./run-single.sh
+```
+
+To test it from a network client open another terminal and run:
+```sh
+curl -L http://node-1:2379/v2/keys/mykey -XPUT -d value="its alive"
+curl -L http://node-1:2379/v2/keys/mykey
+```
+
+The output from the etcd client should look like:
+![laptop term](img/test-on-pi-remote.png "Testing etcd on remote Raspberry Pi using ReST API")
 
 
 <!-- 
-[title](https://www.google.com "Google's Homepage")
+![Screenshot from Raspberry Pi](img/server-on-pi.png "Web server running on Raspberry Pi")
+[text](link "Title")
 ```sh
 ```
 -->
