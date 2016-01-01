@@ -15,7 +15,7 @@ import (
 // replaced by the content of the file identified by 'path'
 
 func main() {
-	r := regexp.MustCompile("<!--\\s+include\\(\\s*(\\S+)\\s*\\)\\s+-->")
+	r := regexp.MustCompile("\\s*<!--\\s+include\\(\\s*(\\S+)\\s*\\)\\s+-->\\s*")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		t := scanner.Text()

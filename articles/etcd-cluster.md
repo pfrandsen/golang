@@ -201,17 +201,17 @@ cd golang/webserver/ping
 Copy ARM binary to node:
 ```sh
 scp <filename> ubuntu@<node-name>:
-scp server ubuntu@node-1:
+scp server ubuntu@node-4:
 ```
 
 Run it:
 ```sh
-ssh ubuntu@node-1
+ssh ubuntu@node-4
 ./server -port=<port>
 ./server -port=8000
 ```
 
-Access http://node-1:8000/info (http://&lt;node ip&gt;:8000/info) and you should see something like:
+Access http://node-4:8000/info (http://&lt;node ip&gt;:8000/info) and you should see something like:
 
 ![Screenshot from Raspberry Pi](img/server-on-pi.png "Web server running on Raspberry Pi")
 
@@ -355,12 +355,16 @@ for device in $DEVICENAMES; do
 done
 ```
 
+### etcd
+etcd, which is part of [CoreOS](https://en.wikipedia.org/wiki/CoreOS "CoreOS Wikipedia article") is a daemon that runs across the nodes in a cluster to provides a distributed key-value store. It is often used for
+reliably distributing configuration information (e.g., [Kubernetes](https://en.wikipedia.org/wiki/Kubernetes "Kubernetes Wikipedia article") depends on etcd). It will be used here as the "sample" service to test out the cluster.
 
 
-
+<!-- 
+[title](https://www.google.com "Google's Homepage")
 ```sh
 ```
-
+-->
 
 
 
