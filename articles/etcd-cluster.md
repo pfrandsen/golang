@@ -515,7 +515,7 @@ Note that when creating a docker image on Snappy the docker build command must b
 Error checking context is accessible: 'can't stat '.''. Please check permissions and try again.
 ```
 
-You should replace **pfrandsen/etcd** with your own **repository name** if you want to push the image to Docker Hub (https://hub.docker.com/). The Dockerfile and other scripts used in this section can be etcd directory of the GitHub repository used previously.
+You should replace **pfrandsen/etcd** with your own **repository name** if you want to push the image to Docker Hub (https://hub.docker.com/). The Dockerfile and other scripts used in this section can be in the etcd directory of the GitHub repository used previously.
 
 The Docker image build below can be found here [https://hub.docker.com/r/pfrandsen/etcd/](https://hub.docker.com/r/pfrandsen/etcd/).
 
