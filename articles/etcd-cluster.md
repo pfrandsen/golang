@@ -468,7 +468,7 @@ ssh ubuntu@node-1
 The output should look like:
 ![Raspberry Pi term](img/test-on-pi.png "Testing etcdctl on Raspberry Pi")
 
-##### Accessing etcd over the network
+#### Accessing etcd over the network
 When the etcd server is started as shown in the previous section it is not accessible from remote hosts. To enable network access the etcd server needs to be configured (via **listen-client-urls** parameter) to listen on the meta address 0.0.0.0. When this address is used etcd will listens to the given port on all interfaces. The parameter **advertise-client-urls** must also be set when listen-client-urls are set.
 
 
@@ -483,7 +483,6 @@ ACU="http://"`hostname`":2379,http://"`hostname`":4001"
 ./etcd -name $NODE_NAME -listen-client-urls $LCU -advertise-client-urls $ACU
 
 ```
-
 
 Copy script to node:
 ```sh
@@ -507,17 +506,20 @@ curl -L http://node-1:2379/v2/keys/mykey
 The output from the etcd client should look like:
 ![laptop term](img/test-on-pi-remote.png "Testing etcd on remote Raspberry Pi using ReST API")
 
+## Creating a Docker image for etcd
 
-<!-- 
-![Screenshot from Raspberry Pi](img/server-on-pi.png "Web server running on Raspberry Pi")
-[text](link "Title")
+See the guide [Build your own images](https://docs.docker.com/engine/userguide/dockerimages/ “Build your own images”) for additional information. 
+
+Note that when creating a docker image on Snappy the docker build command must be run from apps/docker/&lt;version&gt; or a subdirectory, else you will get an error like
 ```sh
+Error checking context is accessible: 'can't stat '.''. Please check permissions and try again.
 ```
--->
 
+You should replace **pfrandsen/etcd** with your own **repository name** if you want to push the image to Docker Hub (https://hub.docker.com/). The Dockerfile and other scripts used in this section can be etcd directory of the GitHub repository used previously.
 
+The Docker image build below can be found here [https://hub.docker.com/r/pfrandsen/etcd/](https://hub.docker.com/r/pfrandsen/etcd/).
 
-
+Create a Dockerfile like this one:
 ```dockerfile
 FROM resin/rpi-raspbian:wheezy-20151223
 MAINTAINER Peter Frandsen <pfrandsen@gmail.com>
@@ -534,5 +536,200 @@ ENV PATH "$PATH:/etcd"
 
 EXPOSE 4001 7001 2379 2380
 ```
+
+Copy the file to the device and build the image:
+```sh
+scp Dockerfile ubuntu@node-1:
+ssh ubuntu@node-1
+cd apps/docker/<version>
+```
+if the above directory does not exist then run “docker --version” and it should show up
+```sh
+mkdir pfrandsen
+cd pfrandsen
+cp ~/etcd .
+cp ~/etcdctl .
+cp ~/Dockerfile .
+docker build -t pfrandsen/etcd:v1 .
+```
+
+Create a container from the new image to test it.
+```sh
+docker run -t -i pfrandsen/etcd:v1 /bin/bash
+root@617ae916b3b4:/# etcd --version
+```
+
+Output should be something like
+```sh
+etcd Version: 2.2.2
+Git SHA: 1ff3f2e
+Go Version: go1.5.1
+Go OS/Arch: linux/arm
+```
+
+Push the image to Docker Hub and remove it locally.
+```sh
+docker push pfrandsen/etcd:v1
+docker rmi -f pfrandsen/etcd:v1
+```
+*-f can be omitted if no containers are using image.*
+
+Running the following command should pull the image from Docker Hub.
+```sh
+docker run -t -i pfrandsen/etcd:v1 /bin/bash
+```
+
+### Run a single node etcd “cluster” and access it via the network
+
+Note: The GitHub repository contains scripts to run etcd both directly on Snappy (as seen in previous section) and via a Docker image. The example here will use the Docker image.
+```sh
+#!/bin/bash
+
+NODE=`hostname`
+NODE_NAME="etcd-$NODE"
+CONTAINER_NAME="etcd-${NODE}-container"
+
+# cannot use the following as Snappy does not have host command
+# PUBLIC_IP=`host -t a $NODE | awk '{print $4}' | egrep ^[1-9]`
+PUBLIC_IP=`ping -c 1 -I eth0 -W 1 $NODE | head -1 | awk '{print $5}'` # optionally hardcode public ip
+
+echo "Running etcd, ip is $PUBLIC_IP"
+
+if [ -n "$PUBLIC_IP" ]; then
+    docker run --name $CONTAINER_NAME -p 4001:4001 -p 2380:2380 -p 2379:2379 pfrandsen/etcd:v1 \
+    etcd -name $NODE_NAME \
+      -advertise-client-urls http://${PUBLIC_IP}:2379,http://${PUBLIC_IP}:4001 \
+      -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
+      -initial-advertise-peer-urls http://${PUBLIC_IP}:2380 \
+      -listen-peer-urls http://0.0.0.0:2380 \
+      -initial-cluster-token etcd-cluster-1 \
+      -initial-cluster $NODE_NAME=http://${PUBLIC_IP}:2380 \
+      -initial-cluster-state new
+else
+    echo "Error: ip not found"
+fi
+
+```
+
+The script uses the following command to get the public ip address of the host it is running on (you may want to replace it with a hardcoded ip):
+```sh
+ping -c 1 -I eth0 -W 1 $NODE | head -1 | awk '{print $5}'
+```
+
+Copy script to node:
+```sh
+[git clone https://github.com/pfrandsen/golang.git]
+[cd golang/etcd]
+scp run-single-docker.sh ubuntu@node-1:
+```
+
+Run etcd service:
+```sh
+ssh ubuntu@node-1
+./run-single-docker.sh
+```
+
+If you get an error like: Error response from daemon: Conflict. The name "etcd-node-1-container" is already in use by container 2a872625d5f2 ..., then run this command to clean up container that have exited:
+```sh
+docker ps -a | grep Exited | cut -c -12 | xargs --no-run-if-empty docker rm
+```
+
+To test it from a network client open another terminal and run:
+```sh
+curl -L http://node-1:2379/v2/keys/mykey -XPUT -d value="its alive"
+curl -L http://node-1:2379/v2/keys/mykey
+```
+
+## Run a 4 node etcd cluster
+
+Finally I am ready to run a etcd cluster across the Raspberry Pi node - it is after all the whole purpose of this exercise.
+
+I have 4 Raspberry Pi devices so the scripts for running the cluster are made for this specific configuration. You should simply need to change the list of hostnames to have them work for other configurations.
+
+The cluster uses static configuration (see https://github.com/coreos/etcd/blob/master/Documentation/clustering.md#static).
+
+```sh
+#!/bin/bash
+
+NODESET="node-1 node-2 node-3 node-4"
+STATE="new"
+PRE="etcd-"
+NODE=`hostname`
+NODE_NAME="${PRE}${NODE}"
+CONTAINER_NAME="${NODE_NAME}-container"
+
+for i in "$@"
+do
+case $i in
+    -r|--restart)
+    STATE="existing"
+    ;;
+    *)
+            # unknown option
+    ;;
+esac
+done
+
+# cannot use the following as Snappy does not have host command
+# PUBLIC_IP=`host -t a $NODE | awk '{print $4}' | egrep ^[1-9]`
+PUBLIC_IP=`ping -c 1 -I eth0 -W 1 $NODE | head -1 | awk '{print $5}'` # optionally hardcode public ip
+PUBLIC_IPS=$PUBLIC_IP
+INITIAL_CLUSTER="${NODE_NAME}=http://${PUBLIC_IP}:2380"
+
+for n in $NODESET; do
+    if [ "$n" != "$NODE" ]; then
+        # find public ip of other node and add it to cluster
+        ip=`ping -c 1 $n | head -1 | awk '{print $3}' | tr -d '()'`
+        cn="${PRE}${n}=http://${ip}:2380"
+        echo "Adding ${cn} to cluster"
+        INITIAL_CLUSTER="${INITIAL_CLUSTER},${cn}"
+        PUBLIC_IPS="${PUBLIC_IPS},${ip}"
+    fi
+done
+
+if ["$STATE" == "existing"]; then
+    echo "Restarting cluster node"
+fi
+echo "Running etcd cluster, local node address is $PUBLIC_IP"
+echo "IPs: $PUBLIC_IPS"
+echo "Cluster: $INITIAL_CLUSTER"
+
+if [ -n "$PUBLIC_IP" ]; then
+    docker ps -a | grep $CONTAINER_NAME | grep Exited | cut -c -12 | xargs --no-run-if-empty docker rm
+    docker run --name $CONTAINER_NAME -p 4001:4001 -p 2380:2380 -p 2379:2379 pfrandsen/etcd:v1 \
+    etcd -name ${NODE_NAME} \
+      -initial-advertise-peer-urls http://${PUBLIC_IP}:2380 \
+      -listen-peer-urls http://0.0.0.0:2380 \
+      -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
+      -advertise-client-urls http://${PUBLIC_IP}:2379 \
+      -initial-cluster-token etcd-cluster-1 \
+      -initial-cluster $INITIAL_CLUSTER \
+      -initial-cluster-state $STATE
+else
+    echo "Error: ip not found"
+fi
+
+```
+
+
+## Notes
+Snappy Ubuntu Core is, at the time of writing this guide, still a bit limiting in terms of the snaps and commands
+available (at least on ARM, I have not tried it on x86). Small tools that I would have liked to have available but could not
+find include
+* nano editor (I find myself lost in vi)
+* curl/wget (busybox?)
+* host, nslookup
+
+
+<!-- 
+![Screenshot from Raspberry Pi](img/server-on-pi.png "Web server running on Raspberry Pi")
+[text](link "Title")
+```sh
+```
+-->
+
+
+
+
 
 
