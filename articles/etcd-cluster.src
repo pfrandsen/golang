@@ -449,7 +449,8 @@ Reconnect node-1 to the network. The node will reconnect to the cluster (now as 
 
 ![node-1 back](img/node-1-online.png "Node rejoins cluster - now as follower")
 
-You can find more information about the etcd ReST API on GitHub (https://coreos.com/etcd/docs/0.4.7/etcd-api/).
+You can find more information about the etcd ReST API on GitHub (https://github.com/coreos/etcd/blob/master/Documentation/api.md)
+and on the CoreOS web site (https://coreos.com/etcd/docs/0.4.7/etcd-api/).
 
 ## Notes
 Snappy Ubuntu Core is, at the time of writing this guide, still a bit limiting in terms of the snaps and commands
