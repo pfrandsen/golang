@@ -187,29 +187,55 @@ Repeat for node-2 - node-4.
 
 ![Configured Raspberry Pi's](img/ssh-raspberry-pi-x4-small.png "Configured Raspberry Pi's")
 
+### Optional step - testing connectivity (and playing with Go and cross compilation)
+
+You should be able to connect to any port on the Snappy devices, given that there is a service listening on it. If you want to verify access on a given port you can check it with the sample web server shown below (source is on GitHub). Simply build the server with Go (1.5 or later), copy executable to device, run it, and test access via browser/curl/wget.
+
+Build:
+```sh
+git clone https://github.com/pfrandsen/golang.git
+cd golang/webserver/ping
+./arm-build.sh
+```
+
+Copy ARM binary to node:
+```sh
+scp <filename> ubuntu@<node-name>:
+scp server ubuntu@node-1:
+```
+
+Run it:
+```sh
+ssh ubuntu@node-1
+./server -port=<port>
+./server -port=8000
+```
+
+Access http://node-1:8000/info (http://&lt;node ip&gt;:8000/info) and you should see something like:
+
+![Screenshot from Raspberry Pi](img/server-on-pi.png "Web server running on Raspberry Pi")
+
+Web server source code:
+```go
+<!-- include(../webserver/ping/server.go) -->
+```
+
+Build script:
+```sh
+<!-- include(../webserver/ping/arm-build.sh) -->
+```
+
+### Tired of entering password for 4 devices?
+
+If typing in the password each time you ssh into one of the devices makes your fingers hurt, you can run this script to get it over
+with once and for all (remove .ssh folder in /home/ubuntu on each device to reanable password).
+```sh
+<!-- include(../etcd/config-ssh-login.sh) -->
+```
 
 
 
 
-
-```sh
-```
-```sh
-```
-```sh
-```
-```sh
-```
-```sh
-```
-```sh
-```
-```sh
-```
-```sh
-```
-```sh
-```
 ```sh
 ```
 
