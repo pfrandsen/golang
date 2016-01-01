@@ -651,24 +651,15 @@ The cluster uses static configuration (see https://github.com/coreos/etcd/blob/m
 ```sh
 #!/bin/bash
 
+if [[ $PATH != *"docker"* ]]; then
+    PATH="$PATH:/apps/bin/docker"
+fi
+
 NODESET="node-1 node-2 node-3 node-4"
-STATE="new"
 PRE="etcd-"
 NODE=`hostname`
 NODE_NAME="${PRE}${NODE}"
 CONTAINER_NAME="${NODE_NAME}-container"
-
-for i in "$@"
-do
-case $i in
-    -r|--restart)
-    STATE="existing"
-    ;;
-    *)
-            # unknown option
-    ;;
-esac
-done
 
 # cannot use the following as Snappy does not have host command
 # PUBLIC_IP=`host -t a $NODE | awk '{print $4}' | egrep ^[1-9]`
@@ -687,9 +678,6 @@ for n in $NODESET; do
     fi
 done
 
-if ["$STATE" == "existing"]; then
-    echo "Restarting cluster node"
-fi
 echo "Running etcd cluster, local node address is $PUBLIC_IP"
 echo "IPs: $PUBLIC_IPS"
 echo "Cluster: $INITIAL_CLUSTER"
@@ -704,13 +692,44 @@ if [ -n "$PUBLIC_IP" ]; then
       -advertise-client-urls http://${PUBLIC_IP}:2379 \
       -initial-cluster-token etcd-cluster-1 \
       -initial-cluster $INITIAL_CLUSTER \
-      -initial-cluster-state $STATE
+      -initial-cluster-state new
 else
     echo "Error: ip not found"
 fi
 
 ```
 
+On each of the devices run the following command:
+```sh
+./run-single-docker.sh
+```
+
+Now you should have a four node etcd cluster running. To test it write a value to one node and read it from another node
+using these commands:
+```sh
+curl -L http://node-2:2379/v2/keys/mykey -XPUT -d value="write on node 2"
+curl -L http://node-3:2379/v2/keys/mykey
+```
+
+The output should look like
+
+![read write](img/read-write-cluster.png "Write to one node and read from another")
+
+For the next test I am using Postman ReST client to get status information from the cluster.
+
+Initial cluster state (node-1 is leader):
+
+![initial state](img/initial-cluster.png "node-1 is leader")
+
+Disconect node-1 from the network to force the cluster to elect a new leader (in this case it is node-3 is selected as leader):
+
+![node-1 offline](img/node-1-offline.png "Previous leader is offline - a new leader is elected")
+
+Reconnect node-1 to the network. The node will reconnect to the cluster (now as a follower):
+
+![node-1 back](img/node-1-online.png "Node rejoins cluster - now as follower")
+
+You can find more information about the etcd ReST API on GitHub (https://coreos.com/etcd/docs/0.4.7/etcd-api/).
 
 ## Notes
 Snappy Ubuntu Core is, at the time of writing this guide, still a bit limiting in terms of the snaps and commands
@@ -720,16 +739,5 @@ find include
 * curl/wget (busybox?)
 * host, nslookup
 
-
-<!-- 
-![Screenshot from Raspberry Pi](img/server-on-pi.png "Web server running on Raspberry Pi")
-[text](link "Title")
-```sh
-```
--->
-
-
-
-
-
+Other then these minor issues, that will likely be fixed shortly, Snappy is a great OS.
 

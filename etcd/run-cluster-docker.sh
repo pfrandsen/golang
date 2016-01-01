@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [[ $PATH != *"docker"* ]]; then
+    PATH="$PATH:/apps/bin/docker"
+fi
+
 NODESET="node-1 node-2 node-3 node-4"
 PRE="etcd-"
 NODE=`hostname`
