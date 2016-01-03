@@ -100,7 +100,7 @@ due to my limited knowledge about Snappy security). Else I would have used these
 [sudo] echo "node-1" > /etc/hostname
 echo -e "127.0.0.1\tlocalhost" > t; echo -e "127.0.1.1\tnode-1" >> t
 tail -n+3 /etc/hosts >> t
-[sudo| cat t > /etc/hosts
+[sudo] cat t > /etc/hosts
 rm t
 ```
 
@@ -141,7 +141,7 @@ Displaying the hosts file should now print:
 ```sh
 ubuntu@localhost:~$ cat /etc/hosts
 127.0.0.1	localhost
-127.0.1.1	node-1
+127.0.0.1	node-1
 
 # The following lines are desirable for IPv6 capable hosts
 ::1     localhost ip6-localhost ip6-loopback
@@ -183,7 +183,7 @@ frameworks: docker.canonical, webdm.sideload
 apps: 
 ```
 
-Repeat for node-2 - node-4.
+Repeat for node-2, node-3, and node-4.
 
 ![Configured Raspberry Pi's](img/ssh-raspberry-pi-x4-small.png "Configured Raspberry Pi's")
 
@@ -396,7 +396,7 @@ ssh ubuntu@node-1
 ./run-single-docker.sh
 ```
 
-If you get an error like: Error response from daemon: Conflict. The name "etcd-node-1-container" is already in use by container 2a872625d5f2 ..., then run this command to clean up container that have exited:
+If you get an error like: *Error response from daemon: Conflict. The name "etcd-node-1-container" is already in use by container 2a872625d5f2 ...*, then run this command to clean up container that have exited:
 ```sh
 docker ps -a | grep Exited | cut -c -12 | xargs --no-run-if-empty docker rm
 ```
@@ -409,22 +409,24 @@ curl -L http://node-1:2379/v2/keys/mykey
 
 ## Run a 4 node etcd cluster
 
-Finally I am ready to run a etcd cluster across the Raspberry Pi node - it is after all the whole purpose of this exercise.
+Finally I am ready to run a etcd cluster across the Raspberry Pi nodes - it is after all the whole purpose of this exercise.
 
 I have 4 Raspberry Pi devices so the scripts for running the cluster are made for this specific configuration. You should simply need to change the list of hostnames to have them work for other configurations.
 
 The cluster uses static configuration (see https://github.com/coreos/etcd/blob/master/Documentation/clustering.md#static).
 
+The srcipt (run-cluster-docker.sh) to start a etcd cluster node in Docker is given below. All the Pi devices need to be running
+when this is executed on a node, else it will not be able to determine the ip addresses of the other devices.
 ```sh
 <!-- include(../etcd/run-cluster-docker.sh) -->
 ```
 
 On each of the devices run the following command:
 ```sh
-./run-single-docker.sh
+./run-cluster-docker.sh
 ```
 
-Now you should have a four node etcd cluster running. To test it write a value to one node and read it from another node
+Now you should have a four node etcd cluster running. To test it write a value to one node and read it from **another** node
 using these commands:
 ```sh
 curl -L http://node-2:2379/v2/keys/mykey -XPUT -d value="write on node 2"
@@ -435,7 +437,8 @@ The output should look like
 
 ![read write](img/read-write-cluster.png "Write to one node and read from another")
 
-For the next test I am using Postman ReST client to get status information from the cluster.
+For the next test I am using
+[Postman ReST client](https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?hl=en) to get status information from the cluster.
 
 Initial cluster state (node-1 is leader):
 
